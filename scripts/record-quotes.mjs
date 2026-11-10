@@ -1,0 +1,34 @@
+// Re-records app/lib/fixtures/quotes.recorded.json from the live 1Click API (dry:true, no funds move).
+// Usage: node scripts/record-quotes.mjs
+import { writeFileSync } from "node:fs";
+
+const USDC_NEAR = "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1";
+const ASSETS = {
+  "nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near": [6, "0x8ba1f109551bD432803012645Ac136ddd64DBA72"],
+  "nep141:arb-0xaf88d065e77c8cc2239327c5edb3a432268e5831.omft.near": [6, "0x8ba1f109551bD432803012645Ac136ddd64DBA72"],
+  "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near": [6, "0x8ba1f109551bD432803012645Ac136ddd64DBA72"],
+  "nep141:sol-5ce3bf3a31af18be40ba30f721101b4341690186.omft.near": [6, "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"],
+  "nep141:eth-0xdac17f958d2ee523a2206206994597c13d831ec7.omft.near": [6, "0x8ba1f109551bD432803012645Ac136ddd64DBA72"],
+  "nep141:tron-d28a265909efecdcee7c5028585214ea0b96f015.omft.near": [6, "TLa2f6VPqDgRE67v1736s7bJ8Ray5wYjU7"],
+  "nep141:eth.omft.near": [18, "0x8ba1f109551bD432803012645Ac136ddd64DBA72"],
+  "nep141:base.omft.near": [18, "0x8ba1f109551bD432803012645Ac136ddd64DBA72"],
+  "nep141:arb.omft.near": [18, "0x8ba1f109551bD432803012645Ac136ddd64DBA72"],
+  "nep141:sol.omft.near": [9, "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"],
+  "nep141:btc.omft.near": [8, "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"],
+  "nep141:wrap.near": [24, "aurora"],
+};
+const out = { _note: "Recorded from the live 1Click API with dry:true (no deposit address, no funds). EXACT_OUTPUT of 48 USDC to a NEAR account. Recorded " + new Date().toISOString() };
+for (const [asset, [decimals, refundTo]] of Object.entries(ASSETS)) {
+  const body = {
+    dry: true, swapType: "EXACT_OUTPUT", slippageTolerance: 100, originAsset: asset, depositType: "ORIGIN_CHAIN",
+    destinationAsset: USDC_NEAR, amount: "48000000", refundTo, refundType: asset === "nep141:wrap.near" ? "INTENTS" : "ORIGIN_CHAIN",
+    recipient: "aurora", recipientType: "DESTINATION_CHAIN", deadline: new Date(Date.now() + 3600e3).toISOString(),
+  };
+  const res = await fetch("https://1click.chaindefuser.com/v0/quote", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+  const j = await res.json();
+  if (!res.ok) { console.error(asset, res.status, j.message); await new Promise((r) => setTimeout(r, 1500)); continue; }
+  out[asset] = { decimals, amountIn: j.quote.amountIn, minAmountIn: j.quote.minAmountIn, amountOut: j.quote.amountOut, amountInUsd: j.quote.amountInUsd, timeEstimate: j.quote.timeEstimate, signature: j.signature, recordedAt: j.timestamp };
+  await new Promise((r) => setTimeout(r, 1500));
+  console.log(asset, j.quote.amountInFormatted, `~${j.quote.timeEstimate}s`);
+}
+writeFileSync(new URL("../app/lib/fixtures/quotes.recorded.json", import.meta.url), JSON.stringify(out, null, 2) + "\n");

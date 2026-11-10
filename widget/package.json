@@ -1,0 +1,22 @@
+{
+  "name": "@anytill/widget",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "description": "<intents-checkout>: a framework-free Lit web component for paying with any crypto and settling USDC on NEAR.",
+  "scripts": {
+    "build": "vite build"
+  },
+  "dependencies": {
+    "@aurora-is-near/intents-connect": "7.29.0",
+    "@aurora-is-near/intents-connect-wallet": "7.29.0",
+    "lit": "^3.3.3",
+    "uqr": "^0.1.3",
+    "viem": "^2.57.17"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  }
+}

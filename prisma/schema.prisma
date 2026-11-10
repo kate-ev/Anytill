@@ -1,0 +1,99 @@
+// Anytill data model. SQLite in dev and on Render (persistent disk).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Shopify OAuth sessions (from Shopify's React Router app template).
+model Session {
+  id                  String    @id
+  shop                String
+  state               String
+  isOnline            Boolean   @default(false)
+  scope               String?
+  expires             DateTime?
+  accessToken         String
+  userId              BigInt?
+  firstName           String?
+  lastName            String?
+  email               String?
+  accountOwner        Boolean   @default(false)
+  locale              String?
+  collaborator        Boolean?  @default(false)
+  emailVerified       Boolean?  @default(false)
+  refreshToken        String?
+  refreshTokenExpires DateTime?
+}
+
+// One row per store (Shopify shop domain, or a site id for script-tag merchants).
+model Merchant {
+  shop             String   @id
+  displayName      String
+  nearAccount      String
+  enabled          Boolean  @default(false)
+  // Protections. Amounts in US cents.
+  perOrderCapCents Int      @default(50000)
+  dailyCapCents    Int      @default(500000)
+  slippageBps      Int      @default(100)
+  quoteTtlMinutes  Int      @default(30)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  payments         Payment[]
+}
+
+model Payment {
+  id               String    @id @default(cuid())
+  shop             String
+  merchant         Merchant  @relation(fields: [shop], references: [shop])
+  // Shopify order GID, or the merchant's own reference for script-tag sites.
+  orderRef         String
+  orderName        String
+  amountCents      Int
+  currency         String    @default("USD")
+  // Snapshot of the payout account at quote time: later settings changes cannot redirect this payment.
+  recipient        String
+  status           String    @default("created")
+  originAsset      String?
+  originSymbol     String?
+  originChain      String?
+  refundTo         String?
+  depositAddress   String?
+  depositMemo      String?
+  amountIn         String?
+  amountInDisplay  String?
+  minAmountIn      String?
+  amountOutAtomic  String?
+  quoteSignature   String?
+  quoteJson        String?
+  quoteSource      String?
+  deadline         DateTime?
+  timeEstimateSec  Int?
+  lastStatusJson   String?
+  verificationJson String?
+  settledAt        DateTime?
+  depositSeenAt    DateTime?
+  markedPaidAt     DateTime?
+  refundJson       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  events           PaymentEvent[]
+
+  @@index([shop, orderRef])
+  @@index([status])
+}
+
+model PaymentEvent {
+  id        Int      @id @default(autoincrement())
+  paymentId String
+  payment   Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  kind      String
+  detail    String
+  at        DateTime @default(now())
+
+  @@index([paymentId])
+}
