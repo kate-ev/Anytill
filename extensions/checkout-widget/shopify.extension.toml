@@ -1,0 +1,26 @@
+# Thank-you and Order-status block: shows "Pay with any crypto" for orders placed with the
+# "Pay with any crypto" manual payment method, linking to the hosted Anytill pay page.
+api_version = "2026-10"
+
+[[extensions]]
+name = "Anytill pay"
+handle = "anytill-pay"
+type = "ui_extension"
+
+  [[extensions.targeting]]
+  module = "./src/ThankYou.jsx"
+  target = "purchase.thank-you.block.render"
+
+  [[extensions.targeting]]
+  module = "./src/OrderStatus.jsx"
+  target = "customer-account.order-status.block.render"
+
+  [extensions.capabilities]
+  network_access = true
+
+  [extensions.settings]
+    [[extensions.settings.fields]]
+    key = "app_url"
+    type = "single_line_text_field"
+    name = "Anytill app URL"
+    description = "Where your Anytill app runs, e.g. https://anytill.onrender.com"

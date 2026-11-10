@@ -53,7 +53,6 @@ export const PAY_ASSETS: PayAsset[] = [
   { assetId: "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near", symbol: "USDC", chain: "eth", decimals: 6, tokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" },
   { assetId: "nep141:sol-5ce3bf3a31af18be40ba30f721101b4341690186.omft.near", symbol: "USDC", chain: "sol", decimals: 6 },
   { assetId: "nep141:eth-0xdac17f958d2ee523a2206206994597c13d831ec7.omft.near", symbol: "USDT", chain: "eth", decimals: 6, tokenAddress: "0xdAC17F958D2ee523a2206206994597C13D831ec7" },
-  { assetId: "nep141:tron-d28a265909efecdcee7c5028585214ea0b96f015.omft.near", symbol: "USDT", chain: "tron", decimals: 6 },
   { assetId: "nep141:eth.omft.near", symbol: "ETH", chain: "eth", decimals: 18 },
   { assetId: "nep141:base.omft.near", symbol: "ETH", chain: "base", decimals: 18 },
   { assetId: "nep141:arb.omft.near", symbol: "ETH", chain: "arb", decimals: 18 },

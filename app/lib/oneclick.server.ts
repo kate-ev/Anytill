@@ -1,7 +1,7 @@
 // Minimal NEAR Intents 1Click client (https://1click.chaindefuser.com).
 // Shapes follow @defuse-protocol/one-click-sdk-typescript 0.1.26.
 
-import recordedQuotes from "./fixtures/quotes.recorded.json";
+import recordedQuotes from "./fixtures/quotes.recorded";
 
 export type SwapStatus =
   | "KNOWN_DEPOSIT_TX"
@@ -153,7 +153,7 @@ export function createOneClick(opts: {
  * rescaled linearly to the requested USDC amount. Deterministic and offline.
  */
 export function recordedQuote(req: QuoteRequest): QuoteResponse {
-  const rec = (recordedQuotes as Record<string, { amountOut: string; amountIn: string; minAmountIn: string; decimals: number; amountInUsd: string; timeEstimate: number; signature: string }>)[req.originAsset];
+  const rec = (recordedQuotes as unknown as Record<string, { amountOut: string; amountIn: string; minAmountIn: string; decimals: number; amountInUsd: string; timeEstimate: number; signature: string }>)[req.originAsset];
   if (!rec) throw new OneClickError(`No recorded quote for ${req.originAsset}`, 400);
   const scale = (x: string) => ((BigInt(x) * BigInt(req.amount)) / BigInt(rec.amountOut)).toString();
   const amountIn = scale(rec.amountIn);
