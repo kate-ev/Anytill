@@ -122,9 +122,8 @@ export function createOneClick(opts: {
       body = text;
     }
     if (!res.ok) {
-      const msg =
-        (body && typeof body === "object" && "message" in body && String((body as { message: unknown }).message)) ||
-        `1Click ${path} failed with ${res.status}`;
+      const m = body && typeof body === "object" && "message" in body ? String((body as { message: unknown }).message) : "";
+      const msg = m || `1Click ${path} failed with ${res.status}`;
       throw new OneClickError(msg, res.status, body);
     }
     return body as T;

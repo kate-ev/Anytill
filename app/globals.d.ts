@@ -11,5 +11,6 @@ declare namespace JSX {
       "order-name"?: string;
       preview?: string;
     };
+    "s-app-nav": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
   }
 }

@@ -23,7 +23,7 @@ export default function App() {
     );
   }
   return (
-    <AppProvider embedded apiKey={apiKey}>
+    <AppProvider apiKey={apiKey}>
       <s-app-nav>
         <s-link href="/app">Crypto checkout</s-link>
       </s-app-nav>

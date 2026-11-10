@@ -1,0 +1,38 @@
+# Render Blueprint for Anytill. One Node web service with a persistent disk for SQLite.
+# Starts in demo mode (no keys needed). For a real store set ANYTILL_MODE=live and the Shopify keys.
+services:
+  - type: web
+    name: anytill
+    runtime: node
+    plan: starter
+    region: frankfurt
+    buildCommand: yarn install --immutable && yarn build
+    startCommand: yarn setup && yarn start
+    healthCheckPath: /api/v1/assets
+    disk:
+      name: anytill-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: "22.12.0"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        value: file:/var/data/anytill.sqlite
+      - key: ANYTILL_MODE
+        value: demo
+      - key: ONECLICK_SOURCE
+        value: dry
+      - key: NEAR_RPC_URL
+        value: https://rpc.mainnet.near.org
+      - key: SHOPIFY_APP_URL
+        sync: false
+      - key: SHOPIFY_API_KEY
+        sync: false
+      - key: SHOPIFY_API_SECRET
+        sync: false
+      - key: ONECLICK_JWT
+        sync: false
+      - key: SCOPES
+        value: read_orders,write_orders
