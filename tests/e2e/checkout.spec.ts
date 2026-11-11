@@ -1,11 +1,16 @@
 import { expect, test } from "@playwright/test";
 
+// Keep E2E offline and deterministic: third-party fonts and CDN scripts are not part of the checkout.
+test.beforeEach(async ({ page }) => {
+  await page.route(/fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.shopify\.com/, (r) => r.abort());
+});
+
 const SOL_REFUND = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin";
 
 test("landing shows the live checkout card as the hero", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Take crypto from any chain. Get USDC.");
-  await expect(page.locator("intents-checkout").first().getByText("Lagos Leather Co.")).toBeVisible();
+  await expect(page.locator("intents-checkout:visible").first().getByText("Lagos Leather Co.")).toBeVisible();
 });
 
 test("full checkout: pick SOL, get an EXACT_OUTPUT quote, deposit, verified, order marked paid", async ({ page }) => {
@@ -15,7 +20,7 @@ test("full checkout: pick SOL, get an EXACT_OUTPUT quote, deposit, verified, ord
 
   const card = page.locator("intents-checkout");
   await expect(card.getByText("$48.00")).toBeVisible();
-  await card.locator("label.row", { hasText: "SOL" }).click();
+  await card.locator("label.row").filter({ has: page.locator("b", { hasText: /^SOL$/ }) }).click();
   await card.getByRole("textbox").fill(SOL_REFUND);
   await card.getByRole("button", { name: "Continue with SOL" }).click();
 
@@ -53,8 +58,9 @@ test("orders above the per-order cap never get a quote", async ({ page }) => {
 test("merchant admin lists the payment with its proof timeline", async ({ page }) => {
   test.skip(test.info().project.name === "mobile");
   await page.goto("/app");
-  await expect(page.getByText("Demo merchant")).toBeVisible();
-  await expect(page.getByText("Payout and limits")).toBeVisible();
+  await expect(page.getByText("You are viewing the seeded demo store")).toBeVisible();
+  await expect(page.locator('s-section[heading="Payout and limits"]')).toBeAttached();
+  await expect(page.locator('s-text-field[name="nearAccount"]')).toHaveAttribute("defaultValue", "lagos-leather.near");
 });
 
 test("script-tag API: amount capped, quote validated server-side", async ({ request }) => {

@@ -17,7 +17,7 @@ test("capture README screenshots", async ({ page }) => {
   await page.goto("/demo");
   await page.getByTestId("buy-weekender").click();
   const card = page.locator("intents-checkout");
-  await card.locator("label.row", { hasText: "SOL" }).click();
+  await card.locator("label.row").filter({ has: page.locator("b", { hasText: /^SOL$/ }) }).click();
   await page.screenshot({ path: out("store-choose") });
   await card.getByRole("textbox").fill("9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin");
   await card.getByRole("button", { name: "Continue with SOL" }).click();
