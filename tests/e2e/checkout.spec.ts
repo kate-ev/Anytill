@@ -14,6 +14,7 @@ test("landing shows the live checkout card as the hero", async ({ page }) => {
 });
 
 test("full checkout: pick SOL, get an EXACT_OUTPUT quote, deposit, verified, order marked paid", async ({ page }) => {
+  test.setTimeout(90_000);
   await page.goto("/demo");
   await expect(page.getByText("Your cart is empty")).toBeVisible();
   await page.getByTestId("buy-weekender").click();
@@ -30,12 +31,15 @@ test("full checkout: pick SOL, get an EXACT_OUTPUT quote, deposit, verified, ord
 
   await card.getByTestId("simulate").click();
   await expect(card.getByText("Swapping to USDC through NEAR Intents")).toBeVisible();
-  await expect(card.getByTestId("settled")).toContainText("Settled in", { timeout: 20_000 });
-  await card.getByRole("button", { name: /8 of 8 server-side checks passed/ }).click();
+  // Settlement is polled by the widget; wait for the server's verdict explicitly, then for the checks toggle.
+  await expect(card.getByTestId("settled")).toContainText("Settled in", { timeout: 30_000 });
+  const checks = card.getByRole("button", { name: /8 of 8 server-side checks passed/ });
+  await expect(checks).toBeVisible({ timeout: 15_000 });
+  await checks.click();
   await expect(card.getByText("NEAR chain shows the USDC transfer to the merchant")).toBeVisible();
 
   await page.reload();
-  await expect(page.getByTestId("ledger")).toContainText("marked paid");
+  await expect(page.getByTestId("ledger")).toContainText("marked paid", { timeout: 15_000 });
   await expect(page.getByTestId("ledger")).toContainText("8/8 checks passed");
 });
 

@@ -1,4 +1,5 @@
 // Demo store: a fictional shop with seeded, deterministic data. Clearly labelled as demo in the UI.
+import { randomUUID } from "node:crypto";
 import prisma from "../db.server";
 import { DEMO_SHOP } from "./config.server";
 
@@ -29,6 +30,7 @@ export async function createDemoOrder(productId: string) {
   if (!product) throw new Error("Unknown product");
   await ensureDemoMerchant();
   const count = await prisma.payment.count({ where: { shop: DEMO_SHOP } });
-  const ref = `demo-order-${Date.now().toString(36)}`;
+  // Unique per order: two buyers checking out in the same millisecond must never share an order.
+  const ref = `demo-order-${randomUUID()}`;
   return { ref, name: `#${1041 + count}`, cents: product.cents, product };
 }

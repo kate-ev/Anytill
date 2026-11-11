@@ -11,8 +11,13 @@ const env = {
   NODE_ENV: "production",
 };
 
+const unitOnly = !!process.argv.join(" ").match(/--project[= ]unit(\s|$)/) && !process.argv.join(" ").match(/--project[= ](e2e|mobile|screens)/);
+
 export default defineConfig({
   timeout: 30_000,
+  expect: { timeout: 10_000 },
+  // Browser runs: hit every page once so the first test never pays the cold-start cost.
+  globalSetup: unitOnly || process.env.PW_NO_SERVER ? undefined : "./tests/e2e/warmup.ts",
   reporter: [["list"]],
   use: { baseURL: `http://localhost:${PORT}`, trace: "retain-on-failure" },
   projects: [
@@ -22,7 +27,7 @@ export default defineConfig({
     { name: "screens", testDir: "tests/e2e", testMatch: /screens\.spec/, use: { ...devices["Desktop Chrome"] } },
   ],
   // Unit tests need no server; only browser projects start one.
-  webServer: process.env.PW_NO_SERVER || process.argv.join(" ").match(/--project[= ]unit(\s|$)/) && !process.argv.join(" ").match(/--project[= ](e2e|mobile|screens)/)
+  webServer: process.env.PW_NO_SERVER || unitOnly
     ? undefined
     : {
         command: `rm -f prisma/e2e.sqlite* && prisma migrate deploy && react-router-serve ./build/server/index.js`,
