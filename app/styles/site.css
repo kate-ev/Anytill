@@ -45,7 +45,8 @@ a { color: inherit; }
 /* hero */
 .hero { position: relative; isolation: isolate; }
 .band {
-  position: absolute; z-index: -1; left: -10%; right: -10%; top: 360px; height: 260px;
+  position: absolute; z-index: -1; left: -10%; right: -12%; top: 300px; height: 300px;
+  -webkit-mask-image: linear-gradient(90deg, transparent 38%, #000 62%); mask-image: linear-gradient(90deg, transparent 38%, #000 62%);
   transform: skewY(-9deg);
   background: linear-gradient(100deg, #627eea 0%, #0052ff 22%, #14f195 45%, #f7931a 70%, #00c08b 100%);
   opacity: 0.92;
@@ -104,7 +105,7 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
   .grid { grid-template-columns: minmax(0, 1fr); }
   .rail { display: none; }
   .inline-card { display: block; max-width: 400px; }
-  .band { top: 520px; height: 200px; }
+  .band { top: 610px; height: 70px; opacity: 0.55; -webkit-mask-image: none; mask-image: none; }
   .step { min-height: 0; padding: 48px 0; }
   .cols { grid-template-columns: minmax(0, 1fr); }
 }

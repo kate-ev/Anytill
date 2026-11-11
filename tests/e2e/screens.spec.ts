@@ -4,7 +4,7 @@ import { test } from "@playwright/test";
 const out = (n: string) => `docs/screens/${n}.png`;
 
 test("capture README screenshots", async ({ page }) => {
-  test.setTimeout(90_000);
+  test.setTimeout(240_000);
   await page.setViewportSize({ width: 1280, height: 860 });
   await page.goto("/");
   await page.waitForTimeout(800);
