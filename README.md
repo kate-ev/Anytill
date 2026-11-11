@@ -17,11 +17,18 @@ Buyers pick "Pay with any crypto" at checkout, then pay from the Thank-you page.
 
 ## Try it now, no keys (demo mode)
 
+Needs Node 22.12+. Yarn 4 is committed in `.yarn/releases`, so either enable it with corepack or call it with node:
+
 ```bash
 git clone <this repo> anytill && cd anytill
+corepack enable      # puts `yarn` on PATH (Node ships corepack); skip if you already have yarn
 yarn install
 yarn demo            # builds, migrates SQLite, serves http://localhost:3000
 ```
+
+No corepack? Use the committed binary: replace `yarn` with `node .yarn/releases/yarn-4.18.1.cjs`, e.g. `node .yarn/releases/yarn-4.18.1.cjs install && node .yarn/releases/yarn-4.18.1.cjs demo`.
+
+The first install downloads Prisma's engines (~30 MB) and the test run downloads Chromium; on a slow connection that takes a few minutes.
 
 | Do this | You see this |
 |---|---|
@@ -89,6 +96,7 @@ If the buyer sends too little or too late, 1Click refunds them at the refund add
 `yarn && yarn dev` · `yarn test` → unit tests, then a full checkout E2E (desktop and 375 px mobile) against recorded 1Click quotes.
 
 ```bash
+corepack enable      # or use node .yarn/releases/yarn-4.18.1.cjs in place of yarn
 yarn install
 yarn test            # 20 unit tests + Playwright E2E; offline and deterministic
 yarn test:live-dry   # one extra test against the live 1Click API (dry: true, no funds)

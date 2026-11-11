@@ -30,7 +30,8 @@
     "deploy:shopify": "shopify app deploy",
     "config:link": "shopify app config link",
     "prisma": "prisma",
-    "screenshots": "yarn build && playwright test --project=screens"
+    "screenshots": "yarn build && playwright test --project=screens",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

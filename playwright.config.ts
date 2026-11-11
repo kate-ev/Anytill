@@ -21,7 +21,8 @@ export default defineConfig({
     { name: "mobile", testDir: "tests/e2e", testMatch: /checkout\.spec/, use: { ...devices["Desktop Chrome"], viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true } },
     { name: "screens", testDir: "tests/e2e", testMatch: /screens\.spec/, use: { ...devices["Desktop Chrome"] } },
   ],
-  webServer: process.env.PW_NO_SERVER
+  // Unit tests need no server; only browser projects start one.
+  webServer: process.env.PW_NO_SERVER || process.argv.join(" ").match(/--project[= ]unit(\s|$)/) && !process.argv.join(" ").match(/--project[= ](e2e|mobile|screens)/)
     ? undefined
     : {
         command: `rm -f prisma/e2e.sqlite* && prisma migrate deploy && react-router-serve ./build/server/index.js`,
