@@ -10,7 +10,7 @@ export default async function warmup() {
   const p = await (await fetch(`${base}/api/v1/payments`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ merchant: "demo", amount: "1.00", orderRef: `warmup-${Date.now()}` }),
+    body: JSON.stringify({ merchant: "anytill-warmup.near", amount: "1.00", orderRef: `warmup-${Date.now()}` }),
   })).json();
   await fetch(`${base}/api/v1/payments/${p.id}`);
 }

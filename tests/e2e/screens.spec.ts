@@ -32,6 +32,10 @@ test("capture README screenshots", async ({ page }) => {
   await card.getByTestId("settled").waitFor();
   await card.getByRole("button", { name: /server-side checks passed/ }).click();
   await page.screenshot({ path: out("store-settled"), fullPage: true });
+  const href = await card.getByTestId("receipt-link").getAttribute("href");
+  await page.goto(href!);
+  await page.waitForTimeout(600);
+  await page.screenshot({ path: out("receipt"), fullPage: true });
 
   await page.goto("/app");
   await page.waitForTimeout(2500);

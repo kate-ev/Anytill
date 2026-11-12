@@ -84,6 +84,8 @@ export const styles = css`
   .btn:focus-visible, .link:focus-visible, .checks-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .btn.ghost { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
   .btn.sm { min-height: 34px; font-size: 13px; width: auto; padding: 0 12px; justify-self: start; }
+  .btn.sm.center { justify-self: center; }
+  a.btn { text-decoration: none; }
   .link { background: none; border: 0; padding: 6px 10px; font: inherit; font-size: 13px; font-weight: 600; color: var(--accent-ink); cursor: pointer; border-radius: 6px; }
   .send { display: grid; gap: 2px; }
   .big { font-size: 24px; font-weight: 600; letter-spacing: -0.01em; word-break: break-all; }
