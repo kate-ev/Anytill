@@ -38,6 +38,21 @@ test("full checkout: pick SOL, get an EXACT_OUTPUT quote, deposit, verified, ord
   await checks.click();
   await expect(card.getByText("NEAR chain shows the USDC transfer to the merchant")).toBeVisible();
 
+  // Money states: all three stages reached, each with a timestamp.
+  await expect(card.getByTestId("money-states").locator("li.done")).toHaveCount(3);
+
+  // Shareable receipt: amounts, spread vs a named mid-market source, timestamps.
+  const href = await card.getByTestId("receipt-link").getAttribute("href");
+  const receipt = await page.context().newPage();
+  await receipt.route(/fonts\.googleapis\.com|fonts\.gstatic\.com|cdn\.shopify\.com/, (r) => r.abort());
+  await receipt.goto(href!);
+  await expect(receipt.getByTestId("receipt-lines")).toContainText(/Buyer paid\s*0\.\d+ SOL on Solana/);
+  await expect(receipt.getByTestId("receipt-lines")).toContainText("48 USDC on NEAR");
+  await expect(receipt.getByTestId("spread")).toContainText(/-?\d+ bps/);
+  await expect(receipt.getByTestId("spread")).toContainText("CoinGecko");
+  await expect(receipt.locator(".stages li.done")).toHaveCount(3);
+  await receipt.close();
+
   await page.reload();
   await expect(page.getByTestId("ledger")).toContainText("marked paid", { timeout: 15_000 });
   await expect(page.getByTestId("ledger")).toContainText("8/8 checks passed");

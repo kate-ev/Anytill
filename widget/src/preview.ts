@@ -37,6 +37,11 @@ export function PREVIEW(scene: string) {
     settledInSec: status === "paid" ? 38 : null,
     proofTx: status === "paid" ? "DEMO4be1c0a7f29e" : null,
     checks: status === "paid" ? CHECKS : null,
+    stages: [
+      { id: "pending", label: "Pending", detail: "", at: status === "created" || status === "quoted" ? null : new Date(Date.now() - 38e3).toISOString() },
+      { id: "settled", label: "Settled", detail: "", at: status === "paid" ? new Date(Date.now() - 2e3).toISOString() : null },
+      { id: "paid_out", label: "Paid out", detail: "", at: status === "paid" ? new Date().toISOString() : null },
+    ],
   };
   return { view, assets: ASSETS, selected: "sol", refundTo: "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin" };
 }

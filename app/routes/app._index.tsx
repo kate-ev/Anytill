@@ -5,7 +5,7 @@ import prisma from "../db.server";
 import { DEMO_SHOP, config } from "../lib/config.server";
 import { ensureDemoMerchant } from "../lib/demo.server";
 import { checkPayoutAccount } from "../lib/near.server";
-import { PaymentError, createRefund } from "../lib/payments.server";
+import { PaymentError, createRefund, stagesOf } from "../lib/payments.server";
 import { formatUsd, isNearAccountId } from "../lib/assets";
 
 async function shopFor(request: Request): Promise<string> {
@@ -48,6 +48,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       amount: formatUsd(p.amountCents),
       paidWith: p.amountInDisplay ? `${p.amountInDisplay} ${p.originSymbol}` : "–",
       status: p.status,
+      stage: (() => {
+        const reached = stagesOf(p).filter((st) => st.at);
+        const last = reached[reached.length - 1];
+        return last ? `${last.label} · ${new Date(last.at!).toLocaleTimeString("en-GB")}` : "–";
+      })(),
       refund: p.refundJson ? (JSON.parse(p.refundJson) as Record<string, string | boolean>) : null,
       at: p.createdAt.toISOString(),
     })),
@@ -155,6 +160,7 @@ export default function Admin() {
               <s-table-header>Amount</s-table-header>
               <s-table-header>Paid with</s-table-header>
               <s-table-header>Status</s-table-header>
+              <s-table-header>Money state</s-table-header>
               <s-table-header>Actions</s-table-header>
             </s-table-header-row>
             <s-table-body>
@@ -164,7 +170,9 @@ export default function Admin() {
                   <s-table-cell>{p.amount}</s-table-cell>
                   <s-table-cell>{p.paidWith}</s-table-cell>
                   <s-table-cell><s-badge tone={TONE[p.status] ?? "neutral"}>{p.status.replace(/_/g, " ")}</s-badge></s-table-cell>
+                  <s-table-cell>{p.stage}</s-table-cell>
                   <s-table-cell>
+                    <s-link href={`/r/${p.id}`} target="_blank">Receipt</s-link>{" "}
                     {p.refund ? (
                       <s-text>Send {String(p.refund.sendUsdc)} USDC to <code>{String(p.refund.depositAddress)}</code></s-text>
                     ) : p.status === "paid" || p.status === "needs_review" ? (

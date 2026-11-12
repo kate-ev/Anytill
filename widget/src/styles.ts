@@ -141,6 +141,13 @@ export const styles = css`
   .skel-row { cursor: default; }
   .rows { display: grid; gap: 8px; }
   @keyframes shimmer { to { background-position: -200% 0; } }
+  .money { list-style: none; margin: 0; padding: 10px 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; border-radius: var(--r); background: var(--panel); }
+  .money li { display: grid; gap: 1px; font-size: 12px; color: var(--faint); position: relative; padding-top: 14px; }
+  .money li i { position: absolute; top: 2px; left: 0; width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid #c9d3de; }
+  .money li.done { color: var(--ink); }
+  .money li.done i { background: var(--accent); border-color: var(--accent); }
+  .money b { font-weight: 600; font-size: 12.5px; }
+  .money time { font-size: 11.5px; color: var(--faint); }
   @media (max-width: 380px) {
     .head, .body { padding-left: 16px; padding-right: 16px; }
     .deposit { grid-template-columns: 1fr; justify-items: center; text-align: center; }

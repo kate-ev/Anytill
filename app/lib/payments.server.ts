@@ -7,6 +7,7 @@ import { demoChainReader, nearChainReader } from "./near.server";
 import { OneClickError, formatAtomic, recordedQuote, type QuoteResponse, type StatusResponse } from "./oneclick.server";
 import { ordersFor } from "./orders.server";
 import { verifySettlement, type Verification } from "./settlement.server";
+import { computeSpread, fetchMid, type MidSnapshot } from "./price.server";
 
 export class PaymentError extends Error {
   constructor(message: string, public readonly code: string, public readonly httpStatus = 400) {
@@ -142,6 +143,7 @@ export async function quotePayment(paymentId: string, input: { originAsset: stri
     referral: "anytill",
   };
   let res: QuoteResponse & { source: string };
+  const midP = fetchMid(asset, config.quoteSource);
   try {
     res = await oneClick().quote(req);
   } catch (e) {
@@ -186,6 +188,7 @@ export async function quotePayment(paymentId: string, input: { originAsset: stri
       quoteSignature: signature,
       quoteJson: JSON.stringify({ ...res, quote: { ...res.quote, depositAddress } }),
       quoteSource: res.source,
+      midJson: JSON.stringify((await midP) ?? null),
       deadline,
       timeEstimateSec: res.quote.timeEstimate,
       depositSeenAt: null,
@@ -276,6 +279,10 @@ async function doRefresh(paymentId: string): Promise<Payment> {
     } catch {
       return p; // transient; the next poll retries
     }
+  }
+
+  if (st.status === "SUCCESS" && !p.swapDoneAt) {
+    p = await prisma.payment.update({ where: { id: p.id }, data: { swapDoneAt: new Date() } });
   }
 
   const next = mapStatus(st.status);
@@ -448,6 +455,8 @@ export async function publicView(p: Payment) {
       : null,
     refunded: p.status === "refunded" ? { amount: st?.swapDetails.refundedAmountFormatted ?? null, reason: st?.swapDetails.refundReason ?? null, to: p.refundTo } : null,
     settledInSec: settledIn,
+    stages: stagesOf(p),
+    receiptUrl: `/r/${p.id}`,
     proofTx: v?.proofTx ?? null,
     checks: v?.checks ?? null,
   };
@@ -473,4 +482,42 @@ export function startPoller() {
     for (const { id } of open) await refreshPayment(id).catch(() => undefined);
   }, 10_000);
   globalThis.anytillPoller.unref?.();
+}
+
+// ───────────────────────── money states + receipts ─────────────────────────
+
+export function stagesOf(p: Payment) {
+  return [
+    { id: "pending", label: "Pending", detail: "Deposit seen, swap in progress", at: p.depositSeenAt?.toISOString() ?? null },
+    { id: "settled", label: "Settled", detail: "1Click swap complete", at: p.swapDoneAt?.toISOString() ?? null },
+    { id: "paid_out", label: "Paid out", detail: "USDC verified in the merchant's NEAR account, order marked paid", at: p.status === "paid" ? p.settledAt?.toISOString() ?? null : null },
+  ];
+}
+
+export async function receiptOf(p: Payment) {
+  const merchant = await prisma.merchant.findUnique({ where: { shop: p.shop } });
+  const asset = p.originAsset ? findAsset(p.originAsset) : undefined;
+  const st = p.lastStatusJson ? (JSON.parse(p.lastStatusJson) as StatusResponse) : null;
+  const mid = p.midJson ? (JSON.parse(p.midJson) as MidSnapshot | null) : null;
+  const v = p.verificationJson ? (JSON.parse(p.verificationJson) as Verification) : null;
+  // Prefer the amount 1Click actually swapped; fall back to the quoted amount (includes the slippage buffer).
+  const actualIn = st?.swapDetails?.amountIn && p.status === "paid" && config.mode === "live" ? st.swapDetails.amountIn : null;
+  const amountIn = actualIn ?? p.amountIn;
+  const spread = asset && amountIn && p.amountOutAtomic && mid ? computeSpread(amountIn, asset.decimals, p.amountOutAtomic, mid) : null;
+  return {
+    id: p.id,
+    mode: config.mode,
+    status: p.status,
+    merchant: merchant?.displayName ?? p.shop,
+    recipient: p.recipient,
+    order: p.orderName,
+    orderAmount: formatUsd(p.amountCents),
+    paid: asset && amountIn ? { amount: formatAtomic(amountIn, asset.decimals, 9), symbol: asset.symbol, chain: CHAINS[asset.chain].name, basis: actualIn ? "settled amount reported by 1Click" : "quoted amount (includes the slippage buffer; any excess is refunded by 1Click)" } : null,
+    received: p.amountOutAtomic ? { amount: formatAtomic(p.amountOutAtomic, 6), symbol: "USDC", chain: "NEAR" } : null,
+    spread: spread && mid ? { ...spread, source: mid.source, at: mid.at, assetUsd: mid.assetUsd, usdcUsd: mid.usdcUsd } : null,
+    stages: stagesOf(p),
+    proofTx: v?.proofTx ?? null,
+    checksPassed: v ? `${v.checks.filter((c) => c.ok).length}/${v.checks.length}` : null,
+    quoteSource: p.quoteSource,
+  };
 }

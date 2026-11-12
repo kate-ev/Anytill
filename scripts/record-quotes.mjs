@@ -16,7 +16,9 @@ const ASSETS = {
   "nep141:btc.omft.near": [8, "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh"],
   "nep141:wrap.near": [24, "aurora"],
 };
-const out = { _note: "Recorded from the live 1Click API with dry:true (no deposit address, no funds). EXACT_OUTPUT of 48 USDC to a NEAR account. Recorded " + new Date().toISOString() };
+// Mid-market prices from CoinGecko, fetched in the same minute as the quotes so receipts in recorded mode compare like with like.
+const cg = await (await fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana,ethereum,bitcoin,near,usd-coin,tether&vs_currencies=usd&include_last_updated_at=true")).json();
+const out = { _prices: { source: "CoinGecko /api/v3/simple/price", fetchedAt: new Date().toISOString(), usd: Object.fromEntries(Object.entries(cg).map(([k, v]) => [k, v.usd])) }, _note: "Recorded from the live 1Click API with dry:true (no deposit address, no funds). EXACT_OUTPUT of 48 USDC to a NEAR account. Recorded " + new Date().toISOString() };
 for (const [asset, [decimals, refundTo]] of Object.entries(ASSETS)) {
   const body = {
     dry: true, swapType: "EXACT_OUTPUT", slippageTolerance: 100, originAsset: asset, depositType: "ORIGIN_CHAIN",

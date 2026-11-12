@@ -44,4 +44,6 @@ export interface PaymentView {
   settledInSec: number | null;
   proofTx: string | null;
   checks: Check[] | null;
+  stages?: { id: string; label: string; detail: string; at: string | null }[];
+  receiptUrl?: string;
 }

@@ -371,6 +371,7 @@ export class IntentsCheckout extends LitElement {
               <span class="mark">${i < at ? icon("check") : i === at ? spinner() : nothing}</span>${label}
             </li>`)}
         </ol>
+        ${this.stagesRow()}
         <p class="fine">You can close this page. The order is marked paid by the store's server, not by your browser.</p>
       </div>`;
   }
@@ -389,7 +390,18 @@ export class IntentsCheckout extends LitElement {
           ${icon("shield")}<span>${checks.filter((c) => c.ok).length} of ${checks.length} server-side checks passed</span>${icon(this.showChecks ? "up" : "down")}
         </button>
         ${this.showChecks ? html`<ul class="checks">${checks.map((c) => html`<li class=${c.ok ? "ok" : "bad"}>${icon(c.ok ? "check" : "alert")}<span>${c.label}<small class="mono">${c.detail}</small></span></li>`)}</ul>` : nothing}` : nothing}
+      ${this.stagesRow()}
+      ${v.receiptUrl && !this.preview ? html`<a class="btn ghost sm center" data-testid="receipt-link" href=${this.api + v.receiptUrl} target="_blank" rel="noopener">View receipt</a>` : nothing}
       ${v.proofTx ? html`<p class="fine center">${v.mode === "demo" ? html`Simulated NEAR receipt <span class="mono">${short(v.proofTx)}</span>` : html`<a href="https://nearblocks.io/txns/${v.proofTx}" target="_blank" rel="noopener">View the USDC transfer on NEAR</a>`}</p>` : nothing}`;
+  }
+
+  private stagesRow() {
+    const st = this.view?.stages;
+    if (!st) return nothing;
+    const t = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "–");
+    return html`<ol class="money" aria-label="Money states" data-testid="money-states">
+      ${st.map((s) => html`<li class=${s.at ? "done" : ""}><i aria-hidden="true"></i><b>${s.label}</b><time class="mono">${t(s.at)}</time></li>`)}
+    </ol>`;
   }
 
   private refunded() {

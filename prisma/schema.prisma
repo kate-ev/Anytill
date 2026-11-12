@@ -77,6 +77,10 @@ model Payment {
   verificationJson String?
   settledAt        DateTime?
   depositSeenAt    DateTime?
+  // 1Click reported SUCCESS (the swap is settled). Paid out = settledAt (USDC verified in the merchant account).
+  swapDoneAt       DateTime?
+  // Mid-market prices captured at quote time, for the receipt.
+  midJson          String?
   markedPaidAt     DateTime?
   refundJson       String?
   createdAt        DateTime  @default(now())
