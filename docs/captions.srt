@@ -1,0 +1,40 @@
+1
+00:00:00,500 --> 00:00:08,419
+Shopify merchants can't accept crypto from any chain without relying on a centralized custodian. Anytill solves that.
+
+2
+00:00:08,500 --> 00:00:16,396
+The buyer pays with whatever coin they hold. The merchant receives the exact order total in USDC on NEAR through NEAR Intents.
+
+3
+00:00:18,500 --> 00:00:27,740
+On this demo store, we click Buy with crypto on a forty-eight dollar item. The price is verified server-side directly from the Shopify order.
+
+4
+00:00:30,500 --> 00:00:40,747
+We choose Solana. Anytill requests a live exact-output quote from 1Click: send this much SOL, and the merchant receives exactly forty-eight USDC.
+
+5
+00:00:45,500 --> 00:00:55,243
+In demo mode the deposit is simulated. Watch the payment move cleanly through Pending, Settled, and Paid out, with exact timestamps for each stage.
+
+6
+00:01:00,500 --> 00:01:08,780
+Before the order is marked paid, the server verifies eight cryptographic checks, confirming the settlement on the NEAR blockchain itself.
+
+7
+00:01:12,500 --> 00:01:21,932
+Every order gets a public receipt showing what the customer paid, what the store received, and the exact spread in basis points against mid-market prices.
+
+8
+00:01:27,500 --> 00:01:35,756
+Merchants manage everything inside the Shopify admin, configure daily spending caps, and issue crypto refunds with one click.
+
+9
+00:01:37,500 --> 00:01:47,268
+Our security suite tests thirteen attacks: forged deposits, replayed quotes, and redirected payouts. Thirteen of thirteen refused.
+
+10
+00:01:47,500 --> 00:01:53,451
+Anytill. One Shopify app, or one script tag. Built at the NEAR Hackathon.
+
