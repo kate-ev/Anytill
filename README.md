@@ -7,11 +7,12 @@ Anytill is a Shopify app and a one-script-tag checkout widget. A buyer pays with
 **The problem.** A store that wants crypto today either picks one chain and loses everyone else, or uses a custodial processor. Shopify's payments-app route takes weeks of approval. And cross-chain checkouts fail quietly: short deposits, swapped recipients, a page that says "paid" when nothing arrived.
 
 ## Judge path (5 minutes, no keys)
-1. `corepack enable && yarn install && yarn test`: 25 unit tests and 13 browser/E2E tests, including **"Try to break it: 13 of 13 attacks refused"** and an AI agent paying over MCP.
-2. `yarn demo`, then open `http://localhost:3000/demo`, buy the $48 Weekender bag with SOL, click **Simulate the deposit**: you see Pending → Settled → Paid out with timestamps, and "8 of 8 server-side checks passed".
-3. Click **View receipt**: what the buyer paid, what the merchant got in USDC, and the spread in basis points against CoinGecko's mid-market price, with the source and time printed.
-4. Open `/app`: the merchant admin with money state and receipt per order.
-5. Read [What is real vs simulated](#what-is-real-vs-simulated) before trusting any number.
+1. `corepack enable && yarn install && yarn test`: 28 unit tests and 13 browser/E2E tests, including **"Try to break it: 13 of 13 attacks refused"** and an AI agent paying over MCP.
+2. `node scripts/verify-receipt.mjs docs/anchored-receipts/cmweunu3p0001vhtvemajz1gc.json` → `MATCH`: the receipt's SHA-256, recomputed on your machine, equals the hash anchored on NEAR testnet. Edit one character in the file and run it again → `MISMATCH`. No keys needed.
+3. `yarn demo`, then open `http://localhost:3000/demo`, buy the $48 Weekender bag with SOL, click **Simulate the deposit**: you see Pending → Settled → Paid out with timestamps, and "8 of 8 server-side checks passed".
+4. Click **View receipt**: what the buyer paid, what the merchant got in USDC, and the spread in basis points against CoinGecko's mid-market price, with the source and time printed.
+5. Open `/app`: the merchant admin with money state and receipt per order.
+6. Read [What is real vs simulated](#what-is-real-vs-simulated) before trusting any number.
 
 ![Landing: the live checkout card is the hero and changes state as you scroll](docs/screens/landing.png)
 
@@ -21,6 +22,49 @@ Anytill is a Shopify app and a one-script-tag checkout widget. A buyer pays with
 3. Create the manual payment method **Pay with any crypto** and add the **Anytill pay** block to the Thank-you and Order-status pages. Done.
 
 Buyers pick "Pay with any crypto" at checkout, then pay from the Thank-you page. When USDC lands and is verified, the order flips to **Paid** in Shopify (`orderMarkAsPaid`), tagged `anytill-paid`, with the NEAR transaction stored in an `anytill.settlement` metafield.
+
+## Live proof on NEAR testnet
+
+Every receipt Anytill verifies is hashed (SHA-256 of a canonical JSON form, [`app/lib/receipt-canonical.mjs`](app/lib/receipt-canonical.mjs)) and anchored in a small write-once contract, so anyone can prove a receipt was not edited later: not by the merchant, the buyer or Anytill.
+
+| | |
+|---|---|
+| Contract | [`receipts.anytill-hk1113.testnet`](https://testnet.nearblocks.io/address/receipts.anytill-hk1113.testnet) ([`contract/src/lib.rs`](contract/src/lib.rs), Rust, near-sdk 5.30, 4 unit tests) |
+| Deployed | one transaction (create account, fund, add key, deploy, `new`): [BP57tB9V…](https://testnet.nearblocks.io/txns/BP57tB9VuMaNgfneef47jiSX3GX2eTssLW5v9RSKAoLb) |
+| Rules | only the owner `anytill-hk1113.testnet` can anchor; an anchor can never be overwritten; `get_anchor` and `verify` are free view calls |
+| Signer | [`app/lib/near-tx.mjs`](app/lib/near-tx.mjs): borsh + ed25519 from `node:crypto`, no NEAR SDK. The key is read from the NEAR CLI keychain or an env var at runtime, never from the repo |
+
+Four demo checkouts, each priced by a **live** 1Click `dry: true` quote and valued against **live** CoinGecko prices, then settled in demo mode, verified (8/8) and anchored automatically by the server:
+
+| Order | Buyer paid | Spread vs mid | Receipt (JSON in repo) | Anchor tx (testnet) |
+|---|---|---|---|---|
+| $48.00 | 0.604595751 SOL on Solana | 122 bps | [`cmweufgfj0001vhcje7see5w8`](docs/anchored-receipts/cmweufgfj0001vhcje7see5w8.json) | [9DetJmXDiY…](https://testnet.nearblocks.io/txns/9DetJmXDiYRhsAGaiZfW1JVpLQ1xSANmEHv51bjP4CkP) |
+| $24.00 | 24.245755 USDC on Base | 102 bps | [`cmweuft8s0003vhcja27w6w4d`](docs/anchored-receipts/cmweuft8s0003vhcja27w6w4d.json) | [AmYXUCSfrh…](https://testnet.nearblocks.io/txns/AmYXUCSfrhXjoKvRetE1cQMzM775Hd7Trn2XjBBePbD8) |
+| $120.00 | 0.062286907 ETH on Arbitrum | 127 bps | [`cmweunu3p0001vhtvemajz1gc`](docs/anchored-receipts/cmweunu3p0001vhtvemajz1gc.json) | [333koEP3dK…](https://testnet.nearblocks.io/txns/333koEP3dKNc9MMg19sdgdG4ofqBrGP4CtAkffgNbJUG) |
+| $250.00 | 0.00365861 BTC on Bitcoin | 140 bps | [`cmweuo18b0003vhtvm8dy9a38`](docs/anchored-receipts/cmweuo18b0003vhtvm8dy9a38.json) | [7zp8jRzBCe…](https://testnet.nearblocks.io/txns/7zp8jRzBCe6NmcM651AqXTgaMSLHfZezLt9Jir2apEqd) |
+
+These are demo receipts: the deposit and payout were simulated (see [What is real vs simulated](#what-is-real-vs-simulated)). The anchors are real testnet transactions and prove that the receipt contents were not edited after verification; they do not prove real money moved.
+
+**Check one yourself:**
+- CLI: `node scripts/verify-receipt.mjs docs/anchored-receipts/<id>.json` (exit code 0 = match)
+- Browser: `/verify?id=<id>` on any Anytill server recomputes the hash in your browser and reads the anchor straight from a public NEAR RPC
+- Raw: `curl https://test.rpc.fastnear.com -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"query","params":{"request_type":"call_function","finality":"final","account_id":"receipts.anytill-hk1113.testnet","method_name":"get_anchor","args_base64":"'$(printf '{"receipt_id":"cmweunu3p0001vhtvemajz1gc"}' | base64)'"}}'`
+
+## What a merchant actually pays (live quote)
+
+Live 1Click dry:true quotes for a $250.00 order (merchant receives exactly 250.00 USDC on NEAR), 2026-11-13T10:46:42.557Z.
+Mid-market: CoinGecko /api/v3/simple/price, same run (USDC $0.999544, USDT $0.999243, ETH $1950.3, SOL $80.35, BTC $69264, NEAR $3.48, USDC $0.999544).
+
+| Buyer pays with | Buyer sends (quote) | Spread at minimum input | Spread at quoted input (incl. 1% slippage buffer) | 1Click time estimate |
+|---|---|---|---|---|
+| USDC on Base | 252.553615 | 1 bps | 102 bps | ~35 s |
+| USDT on Ethereum | 252.739747 | 5 bps | 107 bps | ~45 s |
+| ETH on Arbitrum | 0.129753839750290719 | 26 bps | 127 bps | ~25 s |
+| SOL on Solana | 3.148698524 | 23 bps | 125 bps | ~20 s |
+| BTC on Bitcoin | 0.00365111 | 19 bps | 120 bps | ~805 s |
+| NEAR on NEAR | 72.659047049210988724963591 | 18 bps | 119 bps | ~20 s |
+
+EXACT_OUTPUT: the merchant always receives exactly the order total. The spread is what the buyer sends on top, at mid-market. "Minimum input" is the least 1Click accepts for the quote; the quoted input adds a 1% slippage buffer that 1Click refunds if unused, so the real cost lands between the two. Bitcoin is slow (~13 min). Re-run with `node scripts/merchant-quote.mjs 250`; saved output: [docs/merchant-quote-2026-11-13.md](docs/merchant-quote-2026-11-13.md).
 
 ## Try it now, no keys (demo mode)
 
@@ -129,11 +173,15 @@ extensions/checkout-widget/   Shopify checkout UI extension (Thank-you + Order-s
 widget/               <intents-checkout> Lit web component → public/widget/anytill.js
 prisma/               SQLite schema and migration
 tests/                Playwright: unit/ (no browser) and e2e/
+contract/             receipt-anchor contract (Rust, near-sdk); `yarn test:contract`
+mcp/                  MCP server for AI agents
+scripts/              record quotes, live merchant quote, deploy contract, verify a receipt
 render.yaml           Render Blueprint (Node web service + disk)
 ```
 
 **NEAR technology used**
-- **NEAR Intents 1Click API**: `POST /v0/quote` with `EXACT_OUTPUT`, `GET /v0/status`, `POST /v0/deposit/submit`. Settlement runs through the NEAR Intents verifier into the merchant's account; there is no Anytill contract.
+- **NEAR Intents 1Click API**: `POST /v0/quote` with `EXACT_OUTPUT`, `GET /v0/status`, `POST /v0/deposit/submit`. Settlement runs through the NEAR Intents verifier into the merchant's account; no Anytill contract is in the money path.
+- **Receipt-anchor contract** (`contract/`, Rust near-sdk 5.30) on NEAR testnet: write-once SHA-256 anchors for verified receipts, read with free view calls.
 - **NEAR RPC** (`EXPERIMENTAL_tx_status`, `view_account`, `storage_balance_of` on the USDC contract `17208628…36133a1`): reads the payout receipt and checks the merchant account.
 - **Aurora Intents Connect** (`@aurora-is-near/intents-connect-wallet/evm`): sends the deposit from an injected EVM wallet (Ethereum, Base, Arbitrum). Verified against a scripted EIP-1193 wallet in `tests/unit/intents-connect.spec.ts`; not yet tried with a real wallet. Every other chain pays by QR / address.
 - **USDC on NEAR** (NEP-141) as the settlement asset.
@@ -161,6 +209,8 @@ You need a Shopify Partner account, a development or real store, a NEAR mainnet 
 | ✅ | Pay from an EVM wallet through Aurora Intents Connect | `tests/unit/intents-connect.spec.ts`: the real package builds an ERC-20 `transfer(deposit, exact amount)`, a native ETH transfer, and asks the wallet to switch chain first. Tested against a scripted wallet, **not** a real one |
 | ✅ | AI agents can pay over MCP | `tests/e2e/mcp.spec.ts` |
 | ✅ | 375 px mobile | the full checkout E2E runs at 375 px too |
+| ✅ | Receipt hashes anchored on NEAR | contract deployed on testnet ([tx](https://testnet.nearblocks.io/txns/BP57tB9VuMaNgfneef47jiSX3GX2eTssLW5v9RSKAoLb)); 4 receipts anchored and verifiable, see [Live proof](#live-proof-on-near-testnet); `yarn test:live-testnet` re-checks them |
+| ✅ | Real spread numbers | live 1Click quotes vs CoinGecko for a $250 order: 1–28 bps at minimum input, 102–129 bps at quoted input ([table](#what-a-merchant-actually-pays-live-quote)) |
 | ⚠️ | Shopify app on a real store | code is complete (`orderMarkAsPaid`, tag, metafield, checkout extension) but not yet run on a store; needs a Partner account |
 | ⚠️ | Checkout UI extension | written against the 2026-10 API, never built by the Shopify CLI (no Partner login yet) |
 | ⚠️ | Refund in crypto | the admin builds a real 1Click refund quote; the merchant sends the USDC themselves. Not run on mainnet |
@@ -178,6 +228,7 @@ You need a Shopify Partner account, a development or real store, a NEAR mainnet 
 | NEAR payout receipt | Live mode reads it over RPC | Built from the payment, labelled "simulated NEAR receipt" |
 | Settlement checks | Same code in both modes | – |
 | Shopify | Admin API code | `/app` shows a seeded demo store outside Shopify |
+| Receipt anchors | Real NEAR testnet transactions | The receipts they anchor are demo receipts (simulated deposit and payout) |
 | Spread on a demo receipt | Real quote vs real CoinGecko price, so the number is meaningful | It uses the **quoted** amount, which includes the 1% slippage buffer that 1Click refunds; live receipts use the amount 1Click actually swapped |
 
 ## What can go wrong
@@ -200,8 +251,7 @@ Without the NEAR Intents verifier and 1Click there is no route from SOL, BTC or 
 
 ## Built before vs during NEAR HACKATHON (Nov 1–14)
 - **Before:** nothing of ours. The starting point is Shopify's public React Router app template (commit `81eb98b`, 2026-10-30), plus open-source libraries in `package.json`.
-- **During:** everything else, from the first commit on 2026-11-10 (`git log --reverse`): payments core, settlement checks, Lit widget, landing, demo store, admin, checkout extension, receipts, MCP server, tests.
-- **AI tools used:** the code, tests and docs were written with Claude Code (Anthropic), directed and reviewed by the team.
+- **During:** everything else, from the first commit on 2026-11-10 (`git log --reverse`): payments core, settlement checks, Lit widget, landing, demo store, admin, checkout extension, receipts, MCP server, receipt-anchor contract and its testnet deployment (2026-11-13), tests.
 
 ## FAQ
 
@@ -218,4 +268,4 @@ Without the NEAR Intents verifier and 1Click there is no route from SOL, BTC or 
 **Which assets?** USDC (Base, Arbitrum, Ethereum, Solana), USDT (Ethereum), ETH (Ethereum, Base, Arbitrum), SOL, BTC, NEAR. Some routes have minimums set by 1Click; the buyer sees them as a plain message. BTC takes longer to settle (1Click estimates ~13 min).
 
 ## Credits and licence
-Built during NEAR HACKATHON (2026-11). Starts from Shopify's public [React Router app template](https://github.com/Shopify/shopify-app-template-react-router) (commit `81eb98b`, MIT). Uses Lit, uqr, Prisma, Playwright and the packages listed in `package.json`. Mid-market prices on receipts come from CoinGecko's public API. Code was written with AI assistance (Claude Code). MIT licence, see [LICENSE](LICENSE).
+Built during NEAR HACKATHON (2026-11). Starts from Shopify's public [React Router app template](https://github.com/Shopify/shopify-app-template-react-router) (commit `81eb98b`, MIT). Uses Lit, uqr, Prisma, Playwright and the packages listed in `package.json`. Mid-market prices on receipts come from CoinGecko's public API. MIT licence, see [LICENSE](LICENSE).
