@@ -32,7 +32,11 @@
     "prisma": "prisma",
     "screenshots": "yarn build && playwright test --project=screens",
     "postinstall": "prisma generate",
-    "mcp": "node mcp/anytill-mcp.mjs"
+    "mcp": "node mcp/anytill-mcp.mjs",
+    "verify-receipt": "node scripts/verify-receipt.mjs",
+    "test:contract": "cd contract && cargo test",
+    "test:live-testnet": "ANYTILL_LIVE_TESTNET=1 playwright test --project=unit tests/unit/anchor.spec.ts",
+    "deploy:contract": "cd contract && cargo near build non-reproducible-wasm --locked && cd .. && node scripts/deploy-receipts-contract.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",

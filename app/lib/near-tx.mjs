@@ -87,7 +87,30 @@ export function loadKey({ file, secret, accountId }) {
 }
 
 // ───────── rpc ─────────
-export async function rpc(url, method, params) {
+export const TESTNET_RPCS = ["https://test.rpc.fastnear.com", "https://near-testnet.drpc.org", "https://rpc.testnet.near.org"];
+export const MAINNET_RPCS = ["https://free.rpc.fastnear.com", "https://near.drpc.org", "https://rpc.mainnet.near.org"];
+
+// Public RPCs rate-limit or get retired (rpc.testnet.near.org now answers -429 "deprecated"), so `urls` may be
+// a list: on a transient error we move to the next one, with backoff.
+export async function rpc(urls, method, params, attempts = 6) {
+  const list = Array.isArray(urls) ? urls : String(urls).split(",");
+  let last;
+  for (let i = 0; i < attempts; i++) {
+    const url = list[i % list.length];
+    try {
+      return await rpcOnce(url, method, params);
+    } catch (e) {
+      last = e;
+      const transient = /DEPRECATED|discontinued|rate|429|timeout|fetch failed|ECONN|ETIMEDOUT|ENOTFOUND|Too Many|Unexpected token/i.test(e.message);
+      if (!transient) throw e;
+      if (method === "send_tx" && !/fetch failed|ENOTFOUND|ECONN|429|DEPRECATED|discontinued/i.test(e.message)) throw e;
+      await new Promise((r) => setTimeout(r, 700 * (i + 1)));
+    }
+  }
+  throw last;
+}
+
+async function rpcOnce(url, method, params) {
   const res = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },

@@ -81,6 +81,9 @@ model Payment {
   swapDoneAt       DateTime?
   // Mid-market prices captured at quote time, for the receipt.
   midJson          String?
+  // SHA-256 of the canonical receipt, anchored on NEAR (receipt-anchor contract).
+  anchorHash       String?
+  anchorTx         String?
   markedPaidAt     DateTime?
   refundJson       String?
   createdAt        DateTime  @default(now())

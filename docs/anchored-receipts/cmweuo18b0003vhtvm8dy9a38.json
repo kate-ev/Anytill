@@ -1,0 +1,59 @@
+{
+  "id": "cmweuo18b0003vhtvm8dy9a38",
+  "mode": "demo",
+  "status": "paid",
+  "merchant": "Lagos Leather Co. (demo)",
+  "recipient": "lagos-leather.near",
+  "order": "proof $250.00",
+  "orderAmount": "$250.00",
+  "paid": {
+    "amount": "0.00365861",
+    "symbol": "BTC",
+    "chain": "Bitcoin",
+    "basis": "quoted amount (includes the slippage buffer; any excess is refunded by 1Click)"
+  },
+  "received": {
+    "amount": "250",
+    "symbol": "USDC",
+    "chain": "NEAR"
+  },
+  "spread": {
+    "paidUsd": 253.377,
+    "receivedUsd": 249.884,
+    "bps": 140,
+    "source": "CoinGecko /simple/price (live)",
+    "at": "2026-11-13T10:44:26.000Z",
+    "assetUsd": 69255,
+    "usdcUsd": 0.999536
+  },
+  "stages": [
+    {
+      "id": "pending",
+      "label": "Pending",
+      "detail": "Deposit seen, swap in progress",
+      "at": "2026-11-13T10:44:42.168Z"
+    },
+    {
+      "id": "settled",
+      "label": "Settled",
+      "detail": "1Click swap complete",
+      "at": "2026-11-13T10:44:46.225Z"
+    },
+    {
+      "id": "paid_out",
+      "label": "Paid out",
+      "detail": "USDC verified in the merchant's NEAR account, order marked paid",
+      "at": "2026-11-13T10:44:46.230Z"
+    }
+  ],
+  "proofTx": "DEMO9309215797dbb2b413f17c61aadaec0017ebbd9a",
+  "checksPassed": "8/8",
+  "quoteSource": "dry",
+  "anchor": {
+    "network": "testnet",
+    "contract": "receipts.anytill-hk1113.testnet",
+    "hash": "4c776fe6cdb33f5671ac78e30f6b9135e02afabf8655e11779203a1699fd3fb9",
+    "txHash": "7zp8jRzBCe6NmcM651AqXTgaMSLHfZezLt9Jir2apEqd",
+    "explorer": "https://testnet.nearblocks.io/txns/7zp8jRzBCe6NmcM651AqXTgaMSLHfZezLt9Jir2apEqd"
+  }
+}

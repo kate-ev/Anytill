@@ -4,9 +4,9 @@
 // The key is read from ~/.near-credentials/testnet/<signer>.json (NEAR CLI legacy keychain) and never copied.
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { NEAR, actions, loadKey, rpc, signAndSend, view } from "../app/lib/near-tx.mjs";
+import { NEAR, TESTNET_RPCS, actions, loadKey, rpc, signAndSend, view } from "../app/lib/near-tx.mjs";
 
-const RPC = process.env.NEAR_TESTNET_RPC || "https://rpc.testnet.near.org";
+const RPC = process.env.NEAR_TESTNET_RPC?.split(",") || TESTNET_RPCS;
 const signer = process.env.ANCHOR_SIGNER || "anytill-hk1113.testnet";
 const contractId = process.env.ANCHOR_CONTRACT || `receipts.${signer}`;
 const key = loadKey({ file: process.env.ANCHOR_KEY_FILE || `${homedir()}/.near-credentials/testnet/${signer}.json`, accountId: signer });

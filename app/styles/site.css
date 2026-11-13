@@ -172,3 +172,25 @@ footer.site .wrap { display: flex; justify-content: space-between; gap: 16px; fl
   .stages li { grid-template-columns: 14px 1fr; }
   .stages time, .stages small { grid-column: 2; }
 }
+
+/* verify */
+.verify-form { display: grid; gap: 8px; margin: 8px 0 18px; }
+.verify-form label { font-size: 14px; font-weight: 600; color: var(--slate); }
+.verify-form textarea { font: 13px/1.5 ui-monospace, Menlo, monospace; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; resize: vertical; }
+.verify-form textarea:focus { outline: 2px solid var(--teal); outline-offset: 1px; }
+.verify-form .pillbtn { justify-self: start; }
+.verify-step { color: var(--slate); font-size: 15px; }
+.verdict { border-radius: 12px; padding: 16px 18px; border: 1.5px solid var(--line); }
+.verdict.match { border-color: var(--teal); background: #effaf6; }
+.verdict.altered { border-color: #c0362c; background: #fdf0ef; }
+.verdict strong { display: block; font-size: 17px; margin-bottom: 10px; }
+.verdict.match strong { color: var(--teal-ink); }
+.verdict.altered strong { color: #9a2a22; }
+.verdict dl { margin: 0; display: grid; gap: 6px; font-size: 13.5px; }
+.verdict dl div { display: grid; grid-template-columns: 170px 1fr; gap: 8px; }
+.verdict dt { color: var(--slate); }
+.verdict dd { margin: 0; overflow-wrap: anywhere; }
+.verdict code { font-size: 12.5px; }
+.verdict details { margin-top: 10px; font-size: 13px; }
+.verdict pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 11.5px; background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 10px; }
+@media (max-width: 520px) { .verdict dl div { grid-template-columns: 1fr; gap: 0; } }

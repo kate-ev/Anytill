@@ -8,6 +8,7 @@ import { OneClickError, formatAtomic, recordedQuote, type QuoteResponse, type St
 import { ordersFor } from "./orders.server";
 import { verifySettlement, type Verification } from "./settlement.server";
 import { computeSpread, fetchMid, type MidSnapshot } from "./price.server";
+import { anchorConfig, anchorReceipt } from "./anchor.server";
 
 export class PaymentError extends Error {
   constructor(message: string, public readonly code: string, public readonly httpStatus = 400) {
@@ -360,6 +361,8 @@ async function markPaid(p: Payment, v: Verification, st: StatusResponse): Promis
   const secs = p.depositSeenAt ? Math.round((settledAt.getTime() - p.depositSeenAt.getTime()) / 1000) : null;
   await log(p.id, "verified", `${v.checks.length}/${v.checks.length} checks passed${config.mode === "demo" ? " (demo: simulated NEAR receipt)" : ""}; proof tx ${v.proofTx}`);
   await log(p.id, "paid", `${p.orderName} marked paid${config.mode === "demo" || p.shop.startsWith("site:") ? "" : " in Shopify (orderMarkAsPaid)"}${secs !== null ? ` · settled ${secs}s after deposit` : ""}`);
+  // Anchor the receipt hash on NEAR in the background; the order is already paid either way.
+  void receiptOf(u).then((r) => anchorReceipt(u.id, r)).catch(() => undefined);
   return u;
 }
 
@@ -519,5 +522,8 @@ export async function receiptOf(p: Payment) {
     proofTx: v?.proofTx ?? null,
     checksPassed: v ? `${v.checks.filter((c) => c.ok).length}/${v.checks.length}` : null,
     quoteSource: p.quoteSource,
+    anchor: p.anchorTx
+      ? { network: anchorConfig.network, contract: anchorConfig.contract, hash: p.anchorHash, txHash: p.anchorTx, explorer: anchorConfig.explorer + p.anchorTx }
+      : null,
   };
 }

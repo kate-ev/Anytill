@@ -63,6 +63,11 @@ export default function Receipt() {
         <p className="receipt-foot">
           {r.checksPassed ? <>Server-side checks passed: {r.checksPassed}. </> : null}
           {r.proofTx ? (r.mode === "demo" ? <>Simulated NEAR receipt <code>{r.proofTx.slice(0, 18)}…</code></> : <a href={`https://nearblocks.io/txns/${r.proofTx}`}>USDC transfer on NEAR</a>) : null}
+          <br />
+          {r.anchor ? (
+            <>Receipt hash anchored on NEAR {r.anchor.network}: <a href={r.anchor.explorer} data-testid="anchor-tx">{r.anchor.txHash.slice(0, 12)}…</a> · </>
+          ) : done ? <>Not anchored on chain yet · </> : null}
+          <a href={`/verify?id=${r.id}`}>Verify this receipt</a>
           <br />Receipt {r.id} · settled through NEAR Intents 1Click
         </p>
       </div>
