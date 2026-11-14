@@ -34,6 +34,6 @@ export default defineConfig({
         url: `http://localhost:${PORT}/api/v1/assets`,
         env,
         reuseExistingServer: false,
-        timeout: 60_000,
+        timeout: 180_000, // a cold first start (Prisma engines, migrations) can take over a minute
       },
 });
