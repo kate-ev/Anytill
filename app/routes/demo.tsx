@@ -101,7 +101,7 @@ export default function DemoStore() {
               <ol data-testid="ledger">
                 {events.map((e) => (
                   <li key={e.id}>
-                    <time dateTime={e.at}>{new Date(e.at).toLocaleTimeString("en-GB")}</time>
+                    <time dateTime={e.at}>{new Date(e.at).toLocaleTimeString("en-GB", { timeZone: "UTC" })} UTC</time>
                     <b>{e.order} · {e.kind.replace(/_/g, " ")}</b>
                     <span>{e.detail}</span>
                   </li>

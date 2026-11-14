@@ -51,7 +51,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       stage: (() => {
         const reached = stagesOf(p).filter((st) => st.at);
         const last = reached[reached.length - 1];
-        return last ? `${last.label} · ${new Date(last.at!).toLocaleTimeString("en-GB")}` : "–";
+        return last ? `${last.label} · ${new Date(last.at!).toLocaleTimeString("en-GB", { timeZone: "UTC" })} UTC` : "–";
       })(),
       refund: p.refundJson ? (JSON.parse(p.refundJson) as Record<string, string | boolean>) : null,
       at: p.createdAt.toISOString(),
@@ -194,7 +194,7 @@ export default function Admin() {
         <s-section heading="Proof timeline">
           <s-stack gap="small-200">
             {d.timeline.map((e) => (
-              <s-text key={e.id}><s-text type="strong">{new Date(e.at).toLocaleTimeString("en-GB")} · {e.kind.replace(/_/g, " ")}</s-text> {e.detail}</s-text>
+              <s-text key={e.id}><s-text type="strong">{new Date(e.at).toLocaleTimeString("en-GB", { timeZone: "UTC" })} UTC · {e.kind.replace(/_/g, " ")}</s-text> {e.detail}</s-text>
             ))}
           </s-stack>
         </s-section>
