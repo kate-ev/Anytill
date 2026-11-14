@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import type { ActionFunctionArgs, LinksFunction, LoaderFunctionArgs, MetaFunction } from "react-router";
 import { Form, redirect, useActionData, useLoaderData, useNavigation, useRevalidator } from "react-router";
-import prisma from "../db.server";
+import prisma, { ephemeralStore } from "../db.server";
 import site from "../styles/site.css?url";
 import { Logo } from "../components/Logo";
 import { DEMO_SHOP, config } from "../lib/config.server";
@@ -23,6 +23,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   });
   return {
     paymentId,
+    ephemeral: ephemeralStore,
     mode: config.mode,
     source: config.quoteSource,
     cap: formatUsd(merchant.perOrderCapCents),
@@ -44,7 +45,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function DemoStore() {
-  const { paymentId, products, events, cap, source } = useLoaderData<typeof loader>();
+  const { paymentId, products, events, cap, source, ephemeral } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const nav = useNavigation();
   const { revalidate } = useRevalidator();
@@ -58,7 +59,7 @@ export default function DemoStore() {
   return (
     <>
       <div className="demo-banner" role="note">
-        Demo store. Prices come from {source === "recorded" ? "1Click quotes recorded from the live API" : "live 1Click dry-run quotes"}; deposits are simulated and no funds move.
+        Demo store. Prices come from {source === "recorded" ? "1Click quotes recorded from the live API" : "live 1Click dry-run quotes"}; deposits are simulated and no funds move.{ephemeral ? " This hosted demo keeps data in temporary serverless storage, so orders and receipts reset." : ""}
       </div>
       <div className="store-top">
         <div className="wrap nav">

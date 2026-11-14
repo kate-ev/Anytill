@@ -35,3 +35,5 @@ pnpm-lock.yaml
 /playwright-report/
 /prisma/*.sqlite*
 contract/target/
+/prisma/.generated/
+.vercel/

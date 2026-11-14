@@ -7,7 +7,7 @@ import { demoChainReader, nearChainReader } from "./near.server";
 import { OneClickError, formatAtomic, recordedQuote, type QuoteResponse, type StatusResponse } from "./oneclick.server";
 import { ordersFor } from "./orders.server";
 import { verifySettlement, type Verification } from "./settlement.server";
-import { computeSpread, fetchMid, type MidSnapshot } from "./price.server";
+import { computeSpread, fetchMid, recordedMid, type MidSnapshot } from "./price.server";
 import { anchorConfig, anchorReceipt } from "./anchor.server";
 
 export class PaymentError extends Error {
@@ -144,7 +144,9 @@ export async function quotePayment(paymentId: string, input: { originAsset: stri
     referral: "anytill",
   };
   let res: QuoteResponse & { source: string };
-  const midP = fetchMid(asset, config.quoteSource);
+  // Live prices are fetched alongside the quote; if the quote falls back to the recorded fixture,
+  // the recorded price snapshot (taken in the same minute as those quotes) is used instead.
+  const liveMidP = config.quoteSource === "recorded" ? Promise.resolve(null) : fetchMid(asset, config.quoteSource);
   try {
     res = await oneClick().quote(req);
   } catch (e) {
@@ -189,7 +191,7 @@ export async function quotePayment(paymentId: string, input: { originAsset: stri
       quoteSignature: signature,
       quoteJson: JSON.stringify({ ...res, quote: { ...res.quote, depositAddress } }),
       quoteSource: res.source,
-      midJson: JSON.stringify((await midP) ?? null),
+      midJson: JSON.stringify((res.source === "recorded" ? recordedMid(asset) : await liveMidP) ?? null),
       deadline,
       timeEstimateSec: res.quote.timeEstimate,
       depositSeenAt: null,

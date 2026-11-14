@@ -3,6 +3,7 @@ import { useLoaderData } from "react-router";
 import site from "../styles/site.css?url";
 import { Logo } from "../components/Logo";
 import { getPayment, receiptOf } from "../lib/payments.server";
+import { ephemeralStore } from "../db.server";
 
 // Public, shareable receipt. Holds no refund address or other buyer details.
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: site }];
@@ -14,7 +15,7 @@ export const meta: MetaFunction<typeof loader> = ({ data }) => [
 export const loader = async ({ params }: LoaderFunctionArgs) => {
   const p = await getPayment(params.id!).catch(() => null);
   if (!p) throw new Response("Receipt not found", { status: 404 });
-  return receiptOf(p);
+  return { ...(await receiptOf(p)), ephemeral: ephemeralStore };
 };
 
 const fmtTime = (iso: string | null) => (iso ? new Date(iso).toISOString().replace("T", " ").slice(0, 19) + " UTC" : "–");
@@ -29,7 +30,7 @@ export default function Receipt() {
           <Logo />
           <span className={`stamp ${done ? "ok" : ""}`}>{done ? "Paid" : r.status.replace(/_/g, " ")}</span>
         </header>
-        {r.mode === "demo" ? <p className="receipt-demo" role="note">Demo receipt: real 1Click price, simulated deposit and payout. No funds moved.</p> : null}
+        {r.mode === "demo" ? <p className="receipt-demo" role="note">Demo receipt: real 1Click price, simulated deposit and payout. No funds moved.{r.ephemeral ? " This hosted demo resets, so this link stops working later." : ""}</p> : null}
         <h1>{r.merchant}</h1>
         <p className="receipt-sub">Order {r.order} · {r.orderAmount}</p>
 

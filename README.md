@@ -197,6 +197,28 @@ You need a Shopify Partner account, a development or real store, a NEAR mainnet 
 4. Install the app on your store from the Partner Dashboard, open it, paste your NEAR account, set caps, turn it on.
 5. In the checkout editor, add **Anytill pay** to the Thank-you and Order-status pages and set its **Anytill app URL** setting.
 
+## Deploy on Vercel
+Vercel is optional; Render (`render.yaml`) keeps working unchanged. The app uses the React Router Vercel preset (`@vercel/react-router`, applied only when `VERCEL` is set).
+
+1. Push the repo to GitHub, then in Vercel: **Add New → Project → Import** the repo. The framework is detected as React Router; `vercel.json` sets the commands:
+   - install: `node .yarn/releases/yarn-4.18.1.cjs install`
+   - build: `node .yarn/releases/yarn-4.18.1.cjs setup && node .yarn/releases/yarn-4.18.1.cjs build`
+2. Environment variables: **none are required.** With none set, the site runs in demo mode.
+3. Optional, for data that persists: add a Postgres database (Neon or Vercel Postgres from the Vercel dashboard) and set `DATABASE_URL` to its `postgres://…` URL. At build time `scripts/db-setup.mjs` derives a Postgres schema from the same Prisma models and runs `prisma db push`.
+4. Optional, for a real Shopify store: `ANYTILL_MODE=live`, `SHOPIFY_API_KEY`, `SHOPIFY_API_SECRET`, `SHOPIFY_APP_URL=https://<your-project>.vercel.app`, `SCOPES=read_orders,write_orders`, and a Postgres `DATABASE_URL` (Shopify sessions must persist). Optional receipt anchoring: `ANCHOR_CONTRACT`, `ANCHOR_SIGNER`, `ANCHOR_PRIVATE_KEY`.
+5. Deploy.
+
+| On Vercel | Works? |
+|---|---|
+| Landing, `/demo` store, widget, quotes (live 1Click `dry: true`), receipts, `/verify` against NEAR testnet, the API used by the MCP server | Yes, with no keys |
+| Demo data with **no** `DATABASE_URL` | Works, but **resets**: it lives in a SQLite file in the function's `/tmp`, which is per instance and wiped on cold starts. A receipt link can stop working, and two requests can land on different instances. The demo store and receipts say so on screen |
+| Demo data **with** a Postgres `DATABASE_URL` | Persists |
+| Embedded Shopify admin (`/app`) | Only after the app is linked to a Shopify Partner app whose App URL and redirect URLs point at the Vercel domain (`shopify.app.toml`, then `shopify app deploy`), with the Shopify env vars and Postgres set |
+| Background settlement poller | Not on Vercel (no long-running process). Payments still settle: every status request polls and verifies. A Vercel Cron hitting the status endpoint can be added if needed |
+| Receipt anchoring | Works if `ANCHOR_PRIVATE_KEY` is set; it runs after the response, so on serverless a cold instance can end before the anchor is sent. Render is the safer host for anchoring |
+
+Checked locally: `VERCEL=1 yarn build` produces the preset's Node server bundle (`build/server/nodejs_…/index.js`) and `.vercel/react-router-build-result.json`. Serving that bundle with `VERCEL=1` and no `DATABASE_URL` ran a full checkout (quote → simulated deposit → paid, 8/8 checks, receipt with spread) on the `/tmp` store, with the resetting notice on the page. `vercel build` itself (Vercel's Build Output API) was not run here, because it needs a linked Vercel project; it runs on Vercel at deploy time.
+
 ## Where it stands
 
 | | Claim | Evidence |
@@ -228,6 +250,7 @@ You need a Shopify Partner account, a development or real store, a NEAR mainnet 
 | NEAR payout receipt | Live mode reads it over RPC | Built from the payment, labelled "simulated NEAR receipt" |
 | Settlement checks | Same code in both modes | – |
 | Shopify | Admin API code | `/app` shows a seeded demo store outside Shopify |
+| Hosted demo on Vercel without a database | Same code | Data in a per-instance `/tmp` SQLite file that resets (labelled on screen) |
 | Receipt anchors | Real NEAR testnet transactions | The receipts they anchor are demo receipts (simulated deposit and payout) |
 | Spread on a demo receipt | Real quote vs real CoinGecko price, so the number is meaningful | It uses the **quoted** amount, which includes the 1% slippage buffer that 1Click refunds; live receipts use the amount 1Click actually swapped |
 

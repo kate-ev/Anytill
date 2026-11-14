@@ -41,8 +41,8 @@ export async function fetchMid(asset: PayAsset, mode: "live" | "dry" | "recorded
       at: new Date((j[id].last_updated_at ?? Date.now() / 1000) * 1000).toISOString(),
     };
   } catch {
-    // No price is better than a wrong one: the receipt then says the spread is unavailable.
-    return mode === "dry" ? recordedMid(asset) : null;
+    // No price is better than a wrong one: never value a live quote with the recorded snapshot.
+    return null;
   }
 }
 
