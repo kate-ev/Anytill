@@ -6,8 +6,10 @@ Anytill is a Shopify app and a one-script-tag checkout widget. A buyer pays with
 
 **The problem.** A store that wants crypto today either picks one chain and loses everyone else, or uses a custodial processor. Shopify's payments-app route takes weeks of approval. And cross-chain checkouts fail quietly: short deposits, swapped recipients, a page that says "paid" when nothing arrived.
 
+**Live demo:** [anytill.vercel.app](https://anytill.vercel.app) (demo mode, no keys: open [`/demo`](https://anytill.vercel.app/demo) and buy something). **Video:** [docs/demo.mp4](docs/demo.mp4), captions in [docs/captions.srt](docs/captions.srt).
+
 ## Judge path (5 minutes, no keys)
-1. `corepack enable && yarn install && yarn test`: 28 unit tests and 13 browser/E2E tests, including **"Try to break it: 13 of 13 attacks refused"** and an AI agent paying over MCP.
+1. `corepack enable && yarn install && yarn test` (Node 25+ no longer bundles corepack: run `npm i -g corepack` first, or use `node .yarn/releases/yarn-4.18.1.cjs` wherever this README says `yarn`): 28 unit tests and 13 browser/E2E tests, including **"Try to break it: 13 of 13 attacks refused"** and an AI agent paying over MCP.
 2. `node scripts/verify-receipt.mjs docs/anchored-receipts/cmweunu3p0001vhtvemajz1gc.json` → `MATCH`: the receipt's SHA-256, recomputed on your machine, equals the hash anchored on NEAR testnet. Edit one character in the file and run it again → `MISMATCH`. No keys needed.
 3. `yarn demo`, then open `http://localhost:3000/demo`, buy the $48 Weekender bag with SOL, click **Simulate the deposit**: you see Pending → Settled → Paid out with timestamps, and "8 of 8 server-side checks passed".
 4. Click **View receipt**: what the buyer paid, what the merchant got in USDC, and the spread in basis points against CoinGecko's mid-market price, with the source and time printed.
@@ -72,7 +74,7 @@ Needs Node 22.12+. Yarn 4 is committed in `.yarn/releases`, so either enable it 
 
 ```bash
 git clone <this repo> anytill && cd anytill
-corepack enable      # puts `yarn` on PATH (Node ships corepack); skip if you already have yarn
+corepack enable      # puts `yarn` on PATH; Node 22-24 ship corepack, on Node 25+ run `npm i -g corepack` first
 yarn install
 yarn demo            # builds, migrates SQLite, serves http://localhost:3000
 ```
@@ -85,9 +87,9 @@ The first install downloads Prisma's engines (~30 MB) and the test run downloads
 |---|---|
 | Open `http://localhost:3000` and scroll | The checkout card on the right moves through choose → quote → settling → paid |
 | Open `/demo`, click **Buy with crypto** on the Weekender bag ($48) | The widget for order #10xx, with eleven assets on six chains |
-| Pick **SOL**, paste any Solana address as the refund address, **Continue** | A live 1Click `EXACT_OUTPUT` price (dry run): about 0.577 SOL for exactly 48 USDC, a placeholder `DEMO-…` address and a 30-minute timer |
+| Pick **SOL**, paste any ordinary Solana address as the refund address, **Continue** | A live 1Click `EXACT_OUTPUT` price (dry run): the SOL amount for exactly 48 USDC at today's price (0.65 SOL on 2026-11-14), a placeholder `DEMO-…` address and a 30-minute timer |
 | Click **Simulate the deposit** | Steps tick through deposit → swap → verify; then "Paid · Settled in N s" and "8 of 8 server-side checks passed" |
-| Click **View receipt** | A shareable receipt at `/r/<id>`: "Buyer paid 0.585 SOL on Solana; merchant received 48 USDC on NEAR; spread N bps vs mid-market (CoinGecko)", plus Pending / Settled / Paid out timestamps |
+| Click **View receipt** | A shareable receipt at `/r/<id>`: "Buyer paid <amount> SOL on Solana; merchant received 48 USDC on NEAR; spread N bps vs mid-market (CoinGecko)", plus Pending / Settled / Paid out timestamps |
 | Look at **Merchant ledger** under the products | Each server step: created, quoted, deposit seen, verified (8/8), marked paid |
 | Click **Buy with crypto** on the $640 Atelier trunk | Refused: above the store's $500 per-order cap, no quote issued |
 | Open `/app` | The merchant admin (Polaris) for the demo store: payout account, caps, payments, refunds, proof timeline |
@@ -138,7 +140,7 @@ Or place the element yourself:
 | 7. Re-check order | Anytill server | Order not cancelled, still owes the quoted amount; otherwise **needs review** |
 | 8. Mark paid | Shopify Admin API `orderMarkAsPaid`, once (atomic claim) | `anytill-paid` tag, `anytill.settlement` metafield with the NEAR tx |
 
-If the buyer sends too little or too late, 1Click refunds them at the refund address they gave before quoting; any overpayment above the quote is refunded too. For a return, the admin's **Refund in crypto** builds a 1Click quote from the merchant's USDC back to the buyer's original asset and address, and shows the one `near` CLI command to send it.
+If the buyer sends too little or too late, 1Click refunds them at the refund address they gave before quoting (1Click validates it and rejects burn addresses such as `0x…dEaD`; the widget then says "1Click rejected the refund address"); any overpayment above the quote is refunded too. For a return, the admin's **Refund in crypto** builds a 1Click quote from the merchant's USDC back to the buyer's original asset and address, and shows the one `near` CLI command to send it.
 
 ## Fees and limits
 
@@ -155,12 +157,12 @@ If the buyer sends too little or too late, 1Click refunds them at the refund add
 
 ## For developers
 
-`yarn && yarn dev` · `yarn test` → 25 unit tests, then 13 E2E tests (full checkout on desktop and 375 px, receipts, MCP agent, 13-attack break-it suite) against recorded 1Click quotes.
+`yarn && yarn dev` · `yarn test` → 28 unit tests (2 live-network tests skipped), then 13 E2E tests (full checkout on desktop and 375 px, receipts, MCP agent, 13-attack break-it suite) against recorded 1Click quotes.
 
 ```bash
 corepack enable      # or use node .yarn/releases/yarn-4.18.1.cjs in place of yarn
 yarn install
-yarn test            # 25 unit + 13 E2E tests; offline and deterministic
+yarn test            # 28 unit + 13 E2E tests; offline and deterministic
 yarn test:live-dry   # one extra test against the live 1Click API (dry: true, no funds)
 yarn screenshots     # regenerates docs/screens/*.png
 ```
@@ -186,7 +188,7 @@ render.yaml           Render Blueprint (Node web service + disk)
 - **Aurora Intents Connect** (`@aurora-is-near/intents-connect-wallet/evm`): sends the deposit from an injected EVM wallet (Ethereum, Base, Arbitrum). Verified against a scripted EIP-1193 wallet in `tests/unit/intents-connect.spec.ts`; not yet tried with a real wallet. Every other chain pays by QR / address.
 - **USDC on NEAR** (NEP-141) as the settlement asset.
 
-**Stack**: Shopify's React Router app template (React Router 7.18.2, the version the template pins; see FAQ), Polaris web components in the admin, Prisma + SQLite, Node, Lit 3 for the widget, yarn 4, Playwright, Render.
+**Stack**: Shopify's React Router app template (React Router 7.18.2, the version the template pins; see FAQ), Polaris web components in the admin, Prisma (SQLite locally and on Render, Postgres on Vercel), Node, Lit 3 for the widget, yarn 4, Playwright, Render.
 
 ### Install on a real store
 You need a Shopify Partner account, a development or real store, a NEAR mainnet account registered with the USDC contract, and somewhere to host the app.
@@ -203,21 +205,21 @@ Vercel is optional; Render (`render.yaml`) keeps working unchanged. The app uses
 1. Push the repo to GitHub, then in Vercel: **Add New → Project → Import** the repo. The framework is detected as React Router; `vercel.json` sets the commands:
    - install: `node .yarn/releases/yarn-4.18.1.cjs install`
    - build: `node .yarn/releases/yarn-4.18.1.cjs setup && node .yarn/releases/yarn-4.18.1.cjs build`
-2. Environment variables: **none are required.** With none set, the site runs in demo mode.
-3. Optional, for data that persists: add a Postgres database (Neon or Vercel Postgres from the Vercel dashboard) and set `DATABASE_URL` to its `postgres://…` URL. At build time `scripts/db-setup.mjs` derives a Postgres schema from the same Prisma models and runs `prisma db push`.
+2. **Add a Postgres database: required for a working demo.** In the project, **Storage → Create** (Prisma Postgres, Neon or another Postgres add-on). The add-on sets `DATABASE_URL`; if that is a proxy URL, the app falls back to the `postgres://…` URL in `POSTGRES_URL`. At build time `scripts/db-setup.mjs` derives a Postgres schema from the same Prisma models and runs `prisma db push`. Without a database, Vercel sends the steps of one checkout to different function instances that do not share storage, so the quote step usually fails with "Payment not found".
+3. No API keys are needed: with only the database set, the site runs in demo mode.
 4. Optional, for a real Shopify store: `ANYTILL_MODE=live`, `SHOPIFY_API_KEY`, `SHOPIFY_API_SECRET`, `SHOPIFY_APP_URL=https://<your-project>.vercel.app`, `SCOPES=read_orders,write_orders`, and a Postgres `DATABASE_URL` (Shopify sessions must persist). Optional receipt anchoring: `ANCHOR_CONTRACT`, `ANCHOR_SIGNER`, `ANCHOR_PRIVATE_KEY`.
 5. Deploy.
 
 | On Vercel | Works? |
 |---|---|
 | Landing, `/demo` store, widget, quotes (live 1Click `dry: true`), receipts, `/verify` against NEAR testnet, the API used by the MCP server | Yes, with no keys |
-| Demo data with **no** `DATABASE_URL` | Works, but **resets**: it lives in a SQLite file in the function's `/tmp`, which is per instance and wiped on cold starts. A receipt link can stop working, and two requests can land on different instances. The demo store and receipts say so on screen |
-| Demo data **with** a Postgres `DATABASE_URL` | Persists |
+| Demo **with** Postgres | Works and persists. This is how [anytill.vercel.app](https://anytill.vercel.app) runs (Prisma Postgres) |
+| Demo with **no** database | Pages load, but checkouts usually fail at the quote step ("Payment not found"): the fallback SQLite file lives in each function instance's `/tmp`, and consecutive requests land on different instances. The demo store and receipts show a "resets" notice in this mode. Use it only to check that the build works |
 | Embedded Shopify admin (`/app`) | Only after the app is linked to a Shopify Partner app whose App URL and redirect URLs point at the Vercel domain (`shopify.app.toml`, then `shopify app deploy`), with the Shopify env vars and Postgres set |
 | Background settlement poller | Not on Vercel (no long-running process). Payments still settle: every status request polls and verifies. A Vercel Cron hitting the status endpoint can be added if needed |
 | Receipt anchoring | Works if `ANCHOR_PRIVATE_KEY` is set; it runs after the response, so on serverless a cold instance can end before the anchor is sent. Render is the safer host for anchoring |
 
-Checked locally: `VERCEL=1 yarn build` produces the preset's Node server bundle (`build/server/nodejs_…/index.js`) and `.vercel/react-router-build-result.json`. Serving that bundle with `VERCEL=1` and no `DATABASE_URL` ran a full checkout (quote → simulated deposit → paid, 8/8 checks, receipt with spread) on the `/tmp` store, with the resetting notice on the page. `vercel build` itself (Vercel's Build Output API) was not run here, because it needs a linked Vercel project; it runs on Vercel at deploy time.
+Checked on [anytill.vercel.app](https://anytill.vercel.app) with Prisma Postgres (2026-11-14): create a checkout → live 1Click dry quote → simulated deposit → paid with 8/8 checks → receipt at `/r/<id>` with the spread against CoinGecko. Also checked locally: `VERCEL=1 yarn build` produces the preset's Node server bundle (`build/server/nodejs_…/index.js`) and `.vercel/react-router-build-result.json`. Serving that bundle with `VERCEL=1` and no `DATABASE_URL` ran a full checkout on the `/tmp` store. That works with a single local process; it does not work on Vercel's many instances. `vercel build` itself (Vercel's Build Output API) was not run here, because it needs a linked Vercel project; it runs on Vercel at deploy time.
 
 ## Where it stands
 
@@ -250,7 +252,7 @@ Checked locally: `VERCEL=1 yarn build` produces the preset's Node server bundle 
 | NEAR payout receipt | Live mode reads it over RPC | Built from the payment, labelled "simulated NEAR receipt" |
 | Settlement checks | Same code in both modes | – |
 | Shopify | Admin API code | `/app` shows a seeded demo store outside Shopify |
-| Hosted demo on Vercel without a database | Same code | Data in a per-instance `/tmp` SQLite file that resets (labelled on screen) |
+| Hosted demo on Vercel | Same code, data in Prisma Postgres | Deposits and payouts are simulated, as in every demo |
 | Receipt anchors | Real NEAR testnet transactions | The receipts they anchor are demo receipts (simulated deposit and payout) |
 | Spread on a demo receipt | Real quote vs real CoinGecko price, so the number is meaningful | It uses the **quoted** amount, which includes the 1% slippage buffer that 1Click refunds; live receipts use the amount 1Click actually swapped |
 
